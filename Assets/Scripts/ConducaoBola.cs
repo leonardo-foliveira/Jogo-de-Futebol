@@ -62,6 +62,7 @@ public class ConducaoBola : MonoBehaviour
 
     void TentarCapturar(Collider other)
     {
+        if (tempoSuspenso > 0f) return;  // NÃO captura durante chute/passe
         if (!other.CompareTag(tagBola)) return;
 
         Rigidbody rb = other.attachedRigidbody;
