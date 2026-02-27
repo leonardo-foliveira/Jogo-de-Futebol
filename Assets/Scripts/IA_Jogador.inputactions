@@ -1,0 +1,75 @@
+{
+    "version": 1,
+    "name": "IA_Jogador",
+    "maps": [
+        {
+            "name": "Jogador",
+            "id": "5b202d93-6f06-4ca4-8385-53ca8d3d6c9c",
+            "actions": [
+                {
+                    "name": "Move",
+                    "type": "Value",
+                    "id": "6daa28a1-1271-4aba-8472-b5f422bf03f8",
+                    "expectedControlType": "Vector2",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": true
+                },
+                {
+                    "name": "Passe",
+                    "type": "Button",
+                    "id": "f3a946f9-9a97-4f6a-b68e-caf86c3c05fa",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Chute",
+                    "type": "Button",
+                    "id": "385d1927-0222-4a67-bc61-8485552b3a73",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "cda46999-45de-4696-8733-2e0cf4dd6c60",
+                    "path": "<Gamepad>/leftStick",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Move",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "7ad50ff2-ac4c-4af7-acd8-13a9bb9dce05",
+                    "path": "<Gamepad>/buttonSouth",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Passe",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "53644950-d81b-41d0-ab6b-df439686bbc4",
+                    "path": "<Gamepad>/buttonWest",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Chute",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        }
+    ],
+    "controlSchemes": []
+}

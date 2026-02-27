@@ -3,54 +3,92 @@ using UnityEngine;
 [RequireComponent(typeof(CharacterController))]
 public class OponenteIA : MonoBehaviour
 {
+    [Header("Refs")]
     public Transform bola;
     public PosseBola posse;
+    public Transform alvoGol;
+    public ConducaoBola conducao;
 
-    public Transform alvoComPosse;   // arraste o AlvoGol_Oponente aqui
-    public int timeId = 1;           // opcional, só pra organização
+    [Header("Time")]
+    public int timeId = 1;
 
+    [Header("Movimento")]
     public float velocidade = 5.5f;
     public float rotacao = 10f;
-    public ConducaoBola conducao; // arraste o ConducaoBola do AreaBola do oponente aqui
 
+    [Header("Distâncias")]
+    public float distParar = 0.8f;      // AUMENTEI (0.4 costuma gerar overshoot)
+    public float distFreio = 2.0f;      // começa a reduzir a velocidade aqui
+    public float distPerseguirBola = 25f;
 
-    private CharacterController cc;
+    [Header("Debug")]
+    public bool debug = true;
+    public float debugInterval = 0.25f;
+
+    CharacterController cc;
+    float tDebug;
 
     void Awake()
     {
         cc = GetComponent<CharacterController>();
+        tDebug = debugInterval;
     }
 
     void Update()
     {
         if (bola == null) return;
 
-        bool comPosse = (posse != null && posse.EhDono(transform) && conducao != null && conducao.PegarBolaAtual() != null);
+        bool temPosse = (posse != null && posse.EhDono(transform));
+        bool conduzindo = (conducao != null && conducao.PegarBolaAtual() != null);
 
-        Vector3 alvo;
+        Vector3 alvoPos;
 
-        // Se tem posse, vai para o gol (ou segue em frente se não tiver alvo setado)
-        if (comPosse)
-        {
-            if (alvoComPosse != null) alvo = alvoComPosse.position;
-            else alvo = transform.position + transform.forward * 10f;
-        }
+        if (temPosse && alvoGol != null)
+            alvoPos = alvoGol.position;
         else
+            alvoPos = bola.position;
+
+        Vector3 delta = alvoPos - transform.position;
+        delta.y = 0f;
+
+        float dist = delta.magnitude;
+
+        // Debug visual: linha até o alvo
+        if (debug)
         {
-            // Sem posse, corre até a bola
-            alvo = bola.position;
+            Debug.DrawLine(transform.position + Vector3.up * 0.2f, alvoPos + Vector3.up * 0.2f, Color.yellow);
+            Debug.DrawLine(transform.position + Vector3.up * 0.2f, transform.position + transform.forward * 2f + Vector3.up * 0.2f, Color.cyan);
+
+            tDebug -= Time.deltaTime;
+            if (tDebug <= 0f)
+            {
+                tDebug = debugInterval;
+                string alvoNome = (temPosse && alvoGol != null) ? alvoGol.name : "BOLA";
+                Debug.Log(
+                    $"OPI | temPosse={temPosse} conduzindo={conduzindo} alvo={alvoNome} dist={dist:F2} " +
+                    $"velCC={cc.velocity.magnitude:F2} donoAtual={(posse != null && posse.donoAtual != null ? posse.donoAtual.name : "null")}"
+                );
+            }
         }
 
-        Vector3 dir = alvo - transform.position;
-        dir.y = 0f;
+        // Se já chegou, não anda (mata o círculo)
+        if (dist <= distParar) return;
 
-        if (dir.magnitude < 0.2f) return;
+        Vector3 dir = delta / dist;
 
-        dir.Normalize();
+        // Rotaciona para a direção do movimento
+        if (dir.sqrMagnitude > 0.0001f)
+        {
+            Quaternion alvoRot = Quaternion.LookRotation(dir);
+            transform.rotation = Quaternion.Slerp(transform.rotation, alvoRot, rotacao * Time.deltaTime);
+        }
 
-        cc.SimpleMove(dir * velocidade);
+        // desacelera quando está perto (evita overshoot/orbit)
+        float fatorVel = 1f;
+        if (dist < distFreio)
+            fatorVel = Mathf.Clamp01((dist - distParar) / Mathf.Max(0.001f, (distFreio - distParar)));
 
-        Quaternion q = Quaternion.LookRotation(dir);
-        transform.rotation = Quaternion.Slerp(transform.rotation, q, rotacao * Time.deltaTime);
+        Vector3 move = dir * (velocidade * fatorVel) * Time.deltaTime;
+        cc.Move(move);
     }
 }

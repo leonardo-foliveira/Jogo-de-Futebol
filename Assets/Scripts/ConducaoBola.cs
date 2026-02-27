@@ -10,9 +10,8 @@ public class ConducaoBola : MonoBehaviour
     public float distanciaSolta = 2.0f;
 
     public PosseBola posse;
-    public Transform dono;   // arraste o PlayerRoot aqui
-    public int timeId = 0;   // 0 = seu time, 1 = adversário
-
+    public Transform dono;   // OponenteRoot ou PlayerRoot
+    public int timeId = 0;   // 0 casa, 1 fora
 
     private Rigidbody rbBola;
     private float tempoSuspenso = 0f;
@@ -26,28 +25,31 @@ public class ConducaoBola : MonoBehaviour
         }
 
         if (rbBola == null || pontoConducao == null) return;
-        if (posse != null && dono != null && !posse.EhDono(dono)) return;
 
+        // só conduz se for o dono atual
+        if (posse != null && dono != null && !posse.EhDono(dono)) return;
 
         Vector3 alvo = pontoConducao.position;
         Vector3 delta = alvo - rbBola.position;
 
-        // Se a bola se afastar muito, solta
+        // se afastou muito, aí sim solta
         if (delta.magnitude > distanciaSolta)
-            {
-                if (posse != null && dono != null) posse.SoltarSeDono(dono);
-                rbBola = null;
-                return;
-            }
+        {
+            rbBola = null;
+            if (posse != null && dono != null) posse.SoltarSeDono(dono);
+            return;
+        }
 
-
-        // Mantém a bola no plano do chão (evita “levitar”)
         delta.y = 0f;
 
         Vector3 velDesejada = delta / Time.fixedDeltaTime;
         velDesejada = Vector3.ClampMagnitude(velDesejada, velocidadeMax);
 
+#if UNITY_6000_0_OR_NEWER
         rbBola.linearVelocity = Vector3.Lerp(rbBola.linearVelocity, velDesejada, suavizacao * Time.fixedDeltaTime);
+#else
+        rbBola.velocity = Vector3.Lerp(rbBola.velocity, velDesejada, suavizacao * Time.fixedDeltaTime);
+#endif
     }
 
     public void SuspenderConducao(float segundos)
@@ -55,15 +57,8 @@ public class ConducaoBola : MonoBehaviour
         tempoSuspenso = Mathf.Max(tempoSuspenso, segundos);
     }
 
-    void OnTriggerEnter(Collider other)
-    {
-        TentarCapturar(other);
-    }
-
-    void OnTriggerStay(Collider other)
-    {
-        TentarCapturar(other);
-    }
+    void OnTriggerEnter(Collider other) => TentarCapturar(other);
+    void OnTriggerStay(Collider other) => TentarCapturar(other);
 
     void TentarCapturar(Collider other)
     {
@@ -72,44 +67,30 @@ public class ConducaoBola : MonoBehaviour
         Rigidbody rb = other.attachedRigidbody;
         if (rb == null || rb.isKinematic) return;
 
+        // assume/rouba posse
         if (posse != null && dono != null)
         {
             bool ok = posse.TentarAssumir(dono, timeId);
-        if (!ok)
-        {
-            // roubo simples: se encostou na bola, rouba
-            posse.TentarRoubar(dono, timeId);
-}
+            if (!ok) posse.TentarRoubar(dono, timeId);
         }
 
+        // mantém a referência (mesmo se a bola sair do trigger depois)
         rbBola = rb;
     }
 
+    public Rigidbody PegarBolaAtual() => rbBola;
 
-    void OnTriggerExit(Collider other)
-{
-    if (rbBola == null) return;
-
-    if (other.attachedRigidbody == rbBola)
-    {
-        rbBola = null;
-        if (posse != null && dono != null) posse.SoltarSeDono(dono);
-    }
-}
-
-
-    public Rigidbody PegarBolaAtual()
-{
-    return rbBola;
-}
-
-        public void SoltarBola(float suspenderSegundos = 0.35f)
+    public void SoltarBola(float suspenderSegundos = 0.35f)
     {
         if (posse != null && dono != null) posse.SoltarSeDono(dono);
         rbBola = null;
         SuspenderConducao(suspenderSegundos);
     }
 
-    
-
+    // ✅ IMPORTANTE: não zera rbBola no Exit
+    // (se quiser, pode até apagar esse método)
+    void OnTriggerExit(Collider other)
+    {
+        // não fazer nada
+    }
 }

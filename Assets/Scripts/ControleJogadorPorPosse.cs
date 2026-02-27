@@ -5,28 +5,30 @@ public class ControleJogadorPorPosse : MonoBehaviour
     public PosseBola posse;
     public Transform playerRoot;
 
-    [Tooltip("Scripts que recebem input (PlayerMovement, PasseBola, ChuteBola, EmpurrarBola etc). Não coloque ConducaoBola.")]
-    public MonoBehaviour[] scriptsDeInput;
+    [Header("Sempre ativo (ex: PlayerMovement)")]
+    public MonoBehaviour[] scriptsSempreAtivos;
 
-    bool ultimoEstado;
+    [Header("Só com posse (ex: ChuteBola, PasseBola, EmpurrarBola)")]
+    public MonoBehaviour[] scriptsSomenteComPosse;
 
-    void Start()
+    bool ultimoTemPosse;
+
+    void Start() => Aplicar(forcar: true);
+    void Update() => Aplicar(forcar: false);
+
+    void Aplicar(bool forcar)
     {
-        Aplicar();
-    }
+        if (posse == null || playerRoot == null) return;
 
-    void Update()
-    {
-        Aplicar();
-    }
+        // Sempre ativo
+        foreach (var s in scriptsSempreAtivos)
+            if (s != null) s.enabled = true;
 
-    void Aplicar()
-    {
-        bool temPosse = (posse != null && playerRoot != null && posse.EhDono(playerRoot));
-        if (temPosse == ultimoEstado) return;
-        ultimoEstado = temPosse;
+        bool temPosse = posse.EhDono(playerRoot);
+        if (!forcar && temPosse == ultimoTemPosse) return;
+        ultimoTemPosse = temPosse;
 
-        foreach (var s in scriptsDeInput)
+        foreach (var s in scriptsSomenteComPosse)
             if (s != null) s.enabled = temPosse;
     }
 }

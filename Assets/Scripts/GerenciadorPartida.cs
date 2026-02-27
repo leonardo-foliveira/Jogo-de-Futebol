@@ -7,9 +7,12 @@ public class GerenciadorPartida : MonoBehaviour
     public Transform bola;
     public Rigidbody rbBola;
 
+    public PosseBola posse;
+    public ConducaoBola[] conducoesParaLimpar; // PlayerRoot AreaBola + Companheiros + Oponente AreaBola
+
     public Transform playerRoot;
     public Transform oponenteRoot;
-
+   
     public Transform spawnBola;
     public Transform spawnPlayer;
     public Transform spawnOponente;
@@ -77,6 +80,15 @@ public class GerenciadorPartida : MonoBehaviour
 
     private IEnumerator ResetarPosicoesNoFixed()
     {
+        // limpa posse (bola fica oficialmente livre)
+        if (posse != null) posse.Soltar();
+
+        // limpa conduções (ninguém fica “achando” que ainda está com a bola)
+        if (conducoesParaLimpar != null)
+        {
+            foreach (var c in conducoesParaLimpar)
+                if (c != null) c.SoltarBola(0.15f);
+        }
         yield return new WaitForFixedUpdate();
 
         if (rbBola != null)
@@ -101,6 +113,8 @@ public class GerenciadorPartida : MonoBehaviour
 
         TeleportarComCharacterController(playerRoot, spawnPlayer);
         TeleportarComCharacterController(oponenteRoot, spawnOponente);
+        if (posse != null)
+            posse.FixarCameraNoHumano();
     }
 
     private void TeleportarComCharacterController(Transform alvo, Transform spawn)
